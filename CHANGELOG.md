@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.3-rc.1](https://github.com/c-warren/cdnc-release-please-test/compare/v0.0.3-rc...v0.0.3-rc.1) (2025-09-30)
+
+
+### Features
+
+* Add a baby to the sleep page ([#23](https://github.com/c-warren/cdnc-release-please-test/issues/23)) ([a759eb6](https://github.com/c-warren/cdnc-release-please-test/commit/a759eb6ff2de0c4b16e6b935edeab26b0054d505))
+
 ## [0.0.3-rc](https://github.com/c-warren/cdnc-release-please-test/compare/v0.0.2...v0.0.3-rc) (2025-09-30)
 
 
