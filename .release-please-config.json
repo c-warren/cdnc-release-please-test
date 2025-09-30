@@ -6,7 +6,7 @@
   "bump-patch-for-minor-pre-major": true,
   "packages": {
     ".": {
-      "package-name": "cadence",
+      "package-name": "cdnc-release-please-test",
       "release-type": "go",
       "bump-minor-pre-major": true,
       "bump-patch-for-minor-pre-major": true,
