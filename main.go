@@ -10,7 +10,7 @@ func main() {
 	http.HandleFunc("/sleep", func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(time.Second)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprintf(w, "<!DOCTYPE html><html><head><title>Sleep Complete</title></head><body><h1>Hello World</h1><p>Slept for 1 second</p></body></html>")
+		fmt.Fprintf(w, "<!DOCTYPE html><html><head><title>Sleepy Baby</title></head><body><h1>Hello World</h1><p>Slept for 1 second</p></body></html>")
 	})
 
 	// Root handler with 404 for unmatched routes
