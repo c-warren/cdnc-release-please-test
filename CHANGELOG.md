@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.2-rc.1](https://github.com/c-warren/cdnc-release-please-test/compare/cdnc-release-please-test-v0.0.2-rc...cdnc-release-please-test-v0.0.2-rc.1) (2025-09-30)
+
+
+### Features
+
+* Add a 404 endpoint ([#16](https://github.com/c-warren/cdnc-release-please-test/issues/16)) ([ac4dcee](https://github.com/c-warren/cdnc-release-please-test/commit/ac4dceeb91e8536bb338f6c11ae1ce19fc5d9988))
+
 ## [0.0.2-rc](https://github.com/c-warren/cdnc-release-please-test/compare/cdnc-release-please-test-v0.0.1...cdnc-release-please-test-v0.0.2-rc) (2025-09-30)
 
 
