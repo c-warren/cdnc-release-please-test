@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.2-rc](https://github.com/c-warren/cdnc-release-please-test/compare/cdnc-release-please-test-v0.0.1...cdnc-release-please-test-v0.0.2-rc) (2025-09-30)
+
+
+### Features
+
+* Support sleep endpoint ([#14](https://github.com/c-warren/cdnc-release-please-test/issues/14)) ([e3729da](https://github.com/c-warren/cdnc-release-please-test/commit/e3729daa98bdf2817fdc667268eb1f79e4cbb72d))
+
 ## [0.0.1](https://github.com/c-warren/cdnc-release-please-test/compare/cdnc-release-please-test-v0.0.1...cdnc-release-please-test-v0.0.1) (2025-09-30)
 
 
