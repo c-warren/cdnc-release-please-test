@@ -46,33 +46,58 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.createComment({
+            const commentBody = `👋 This PR title doesn't follow the [conventional commit](https://www.conventionalcommits.org/) format.
+            💡 This is currently a **warning only** and won't block your PR.
+
+            **Required Format:**
+            \`\`\`
+            <type>(optional scope): <description>
+            \`\`\`
+
+            **Allowed types:** fix, feat, docs, style, refactor, perf, test, chore, ci, build
+
+            **Examples:**
+            - \`feat(auth): add JWT token validation\`
+            - \`fix: prevent racing of requests\`
+            - \`docs: clarify installation steps\`
+
+            <details>
+            <summary>Error details</summary>
+
+            \`\`\`
+            ${{ steps.lint_pr_title.outputs.error_message }}
+            \`\`\`
+
+            [View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            </details>`;
+
+            // Check for existing comment from this workflow
+            const comments = await github.rest.issues.listComments({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `👋 This PR title doesn't follow the conventional commit format.
-              💡 This is currently a **warning only** and won't block your PR.
+            });
 
-              **Required Format:**
-              \`\`\`
-              <type>(optional scope): <description>
-              \`\`\`
+            const botComment = comments.data.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('This PR title doesn\'t follow the conventional commit format')
+            );
 
-              **Allowed types:** fix, feat, docs, style, refactor, perf, test, chore, ci, build
-
-              **Examples:**
-              - \`feat(auth): add JWT token validation\`
-              - \`fix: prevent racing of requests\`
-              - \`docs: clarify installation steps\`
-
-              <details>
-              <summary>Error details</summary>
-
-              \`\`\`
-              ${{ steps.lint_pr_title.outputs.error_message }}
-              \`\`\`
-
-              [View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-              </details>`
-            })
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: commentBody
+              });
+            }
 
