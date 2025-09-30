@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.0.3-rc.2](https://github.com/c-warren/cdnc-release-please-test/compare/v0.0.3-rc.1...v0.0.3-rc.2) (2025-09-30)
+
+
+### Continuous Integration
+
+* commit to conventions ([#26](https://github.com/c-warren/cdnc-release-please-test/issues/26)) ([23bc837](https://github.com/c-warren/cdnc-release-please-test/commit/23bc837663ada4ad5a8b9a9a7ae5caccdc0298cc))
+
 ## [0.0.3-rc.1](https://github.com/c-warren/cdnc-release-please-test/compare/v0.0.3-rc...v0.0.3-rc.1) (2025-09-30)
 
 
