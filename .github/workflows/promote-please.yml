@@ -1,0 +1,213 @@
+name: Promote Prerelease to Stable
+
+on:
+  workflow_dispatch:
+    inputs:
+      prerelease_tag:
+        description: 'Prerelease tag to promote (e.g., v1.3.6-rc11)'
+        required: true
+        type: string
+      stable_version:
+        description: 'Stable version to create (e.g., v1.3.6)'
+        required: true
+        type: string
+      dry_run:
+        description: 'Dry run mode (validate only, do not create tags or update releases)'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate inputs
+        run: |
+          echo "Validating inputs..."
+
+          # Validate target tag is in semver format (v1.2.3)
+          if ! echo "${{ inputs.stable_version }}" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Error: Target tag must be in semver format: v1.2.3"
+            exit 1
+          fi
+
+          # Validate prerelease tag format
+          if ! echo "${{ inputs.prerelease_tag }}" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+-rc[0-9]+$'; then
+            echo "Error: Prerelease tag must match format: v1.2.3-rc4"
+            exit 1
+          fi
+
+          # Extract base version from prerelease tag
+          PRERELEASE_BASE=$(echo "${{ inputs.prerelease_tag }}" | sed 's/-rc[0-9]*$//')
+
+          if [ "$PRERELEASE_BASE" != "${{ inputs.stable_version }}" ]; then
+            echo "Error: Target tag (${{ inputs.stable_version }}) must match base of prerelease tag ($PRERELEASE_BASE)"
+            exit 1
+          fi
+
+          echo "Input validation passed"
+
+      - name: Check prerelease tag exists
+        run: |
+          if ! git rev-parse "${{ inputs.prerelease_tag }}" >/dev/null 2>&1; then
+            echo "Error: Prerelease tag ${{ inputs.prerelease_tag }} does not exist"
+            exit 1
+          fi
+          echo "Prerelease tag ${{ inputs.prerelease_tag }} exists"
+
+      - name: Verify prerelease tag is actually a prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if a GitHub release exists for this tag and if it's marked as prerelease
+          RELEASE_INFO=$(gh api repos/${{ github.repository }}/releases/tags/${{ inputs.prerelease_tag }} 2>/dev/null || echo "")
+
+          if [ -z "$RELEASE_INFO" ]; then
+            echo "Error: No GitHub release found for tag ${{ inputs.prerelease_tag }}"
+            exit 1
+          fi
+
+          IS_PRERELEASE=$(echo "$RELEASE_INFO" | jq -r '.prerelease')
+
+          if [ "$IS_PRERELEASE" != "true" ]; then
+            echo "Error: Release ${{ inputs.prerelease_tag }} is not marked as a prerelease"
+            exit 1
+          fi
+
+          echo "Confirmed ${{ inputs.prerelease_tag }} is a prerelease"
+
+      - name: Check target tag doesn't already exist
+        run: |
+          if git rev-parse "${{ inputs.stable_version }}" >/dev/null 2>&1; then
+            echo "Error: Target tag ${{ inputs.stable_version }} already exists"
+            exit 1
+          fi
+          echo "Target tag ${{ inputs.stable_version }} does not exist (good)"
+
+      - name: Get commit SHA from prerelease tag
+        id: get_sha
+        run: |
+          COMMIT_SHA=$(git rev-list -n 1 "${{ inputs.prerelease_tag }}")
+          echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "Prerelease tag ${{ inputs.prerelease_tag }} points to commit: $COMMIT_SHA"
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo ""
+            echo "🔍 DRY RUN MODE - No changes will be made"
+            echo ""
+          fi
+
+      - name: Create stable version tag
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "[DRY RUN] Would create tag ${{ inputs.stable_version }} at commit ${{ steps.get_sha.outputs.commit_sha }}"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+
+            git tag -a "${{ inputs.stable_version }}" "${{ steps.get_sha.outputs.commit_sha }}" \
+              -m "Release ${{ inputs.stable_version }} (promoted from ${{ inputs.prerelease_tag }})"
+
+            echo "Created tag ${{ inputs.stable_version }} at commit ${{ steps.get_sha.outputs.commit_sha }}"
+          fi
+
+      - name: Update latest tag
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "[DRY RUN] Would update 'latest' tag to point to commit ${{ steps.get_sha.outputs.commit_sha }}"
+          else
+            # Create or update latest tag (force update if it exists)
+            git tag -f -a latest "${{ steps.get_sha.outputs.commit_sha }}" \
+              -m "Latest stable release: ${{ inputs.stable_version }}"
+
+            echo "Updated 'latest' tag to point to commit ${{ steps.get_sha.outputs.commit_sha }}"
+          fi
+
+      - name: Push tags
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo "[DRY RUN] Would push tag ${{ inputs.stable_version }} to origin"
+            echo "[DRY RUN] Would force push 'latest' tag to origin"
+          else
+            git push origin "${{ inputs.stable_version }}"
+            git push origin latest --force
+            echo "Pushed tags to remote"
+          fi
+
+      - name: Update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the prerelease release ID
+          RELEASE_ID=$(gh api repos/${{ github.repository }}/releases/tags/${{ inputs.prerelease_tag }} --jq '.id' 2>/dev/null || echo "")
+
+          if [ -z "$RELEASE_ID" ]; then
+            echo "No GitHub release found for ${{ inputs.prerelease_tag }}"
+
+            if [ "${{ inputs.dry_run }}" = "true" ]; then
+              echo "[DRY RUN] Would create new stable release ${{ inputs.stable_version }}"
+            else
+              echo "Creating new stable release..."
+
+              # Get release notes from the prerelease tag (or generate basic ones)
+              BODY="Stable release ${{ inputs.stable_version }} (promoted from ${{ inputs.prerelease_tag }})"
+
+              gh release create "${{ inputs.stable_version }}" \
+                --title "${{ inputs.stable_version }}" \
+                --notes "$BODY" \
+                --target "${{ steps.get_sha.outputs.commit_sha }}"
+
+              echo "Created new stable release ${{ inputs.stable_version }}"
+            fi
+          else
+            echo "Found GitHub release for ${{ inputs.prerelease_tag }} (ID: $RELEASE_ID)"
+
+            # Get existing release notes
+            RELEASE_BODY=$(gh api repos/${{ github.repository }}/releases/$RELEASE_ID --jq '.body')
+
+            if [ "${{ inputs.dry_run }}" = "true" ]; then
+              echo "[DRY RUN] Would update GitHub release:"
+              echo "[DRY RUN]   - Change tag from ${{ inputs.prerelease_tag }} to ${{ inputs.stable_version }}"
+              echo "[DRY RUN]   - Change name to ${{ inputs.stable_version }}"
+              echo "[DRY RUN]   - Mark as non-prerelease"
+            else
+              # Update the release
+              gh api repos/${{ github.repository }}/releases/$RELEASE_ID \
+                -X PATCH \
+                -f tag_name="${{ inputs.stable_version }}" \
+                -f name="${{ inputs.stable_version }}" \
+                -f body="$RELEASE_BODY" \
+                -F prerelease=false \
+                -F draft=false
+
+              echo "Updated GitHub release to ${{ inputs.stable_version }}"
+            fi
+          fi
+
+      - name: Summary
+        run: |
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            echo ""
+            echo "🔍 DRY RUN COMPLETE - No changes were made"
+            echo ""
+            echo "Validation summary:"
+            echo "  ✅ Target tag ${{ inputs.stable_version }} is valid semver format"
+            echo "  ✅ Prerelease tag ${{ inputs.prerelease_tag }} exists"
+            echo "  ✅ Prerelease tag is marked as prerelease in GitHub"
+            echo "  ✅ Target tag does not already exist"
+            echo ""
+            echo "Run again with dry_run=false to apply changes"
+          else
+            echo "✅ Successfully promoted ${{ inputs.prerelease_tag }} to ${{ inputs.stable_version }}"
+            echo "Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ inputs.stable_version }}"
+          fi
+
