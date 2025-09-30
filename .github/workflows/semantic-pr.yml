@@ -18,6 +18,7 @@ jobs:
       - name: Validate PR title
         id: lint_pr_title
         uses: amannn/action-semantic-pull-request@v5.4.0
+        # TODO: Remove this once we commit to conventional commits
         continue-on-error: true
         with:
           # Allow standard conventional commit types
@@ -49,26 +50,29 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `⚠️ **Semantic PR Check Failed**
-
-              **Error Details:**
-              \`\`\`
-              ${{ steps.lint_pr_title.outputs.error_message }}
-              \`\`\`
+              body: `👋 This PR title doesn't follow the conventional commit format.
+              💡 This is currently a **warning only** and won't block your PR.
 
               **Required Format:**
               \`\`\`
-              <type>: <description>
+              <type>(optional scope): <description>
               \`\`\`
 
               **Allowed types:** fix, feat, docs, style, refactor, perf, test, chore, ci, build
 
               **Examples:**
-              - \`feat: add user authentication system\`
-              - \`fix: resolve memory leak in worker pool\`
-              - \`docs: update API documentation\`
-              - \`test: add integration tests for auth flow\`
+              - \`feat(auth): add JWT token validation\`
+              - \`fix: prevent racing of requests\`
+              - \`docs: clarify installation steps\`
 
-              This is currently a **warning only** and won't block your PR from being merged.`
+              <details>
+              <summary>Error details</summary>
+
+              \`\`\`
+              ${{ steps.lint_pr_title.outputs.error_message }}
+              \`\`\`
+
+              [View workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+              </details>`
             })
 
