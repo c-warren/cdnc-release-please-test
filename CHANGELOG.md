@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.0.3-rc](https://github.com/c-warren/cdnc-release-please-test/compare/v0.0.2...v0.0.3-rc) (2025-09-30)
+
+
+### Features
+
+* Return 404 page for non existent routes ([#18](https://github.com/c-warren/cdnc-release-please-test/issues/18)) ([7f2f87c](https://github.com/c-warren/cdnc-release-please-test/commit/7f2f87c2656766e8f4884c092b0aca49e264f685))
+
+
+### Continuous Integration
+
+* fix tag format ([#20](https://github.com/c-warren/cdnc-release-please-test/issues/20)) ([d300c85](https://github.com/c-warren/cdnc-release-please-test/commit/d300c853905dd7f4e8ba0dbebd7c3a40b0d73080))
+* promote please ([#22](https://github.com/c-warren/cdnc-release-please-test/issues/22)) ([ce20691](https://github.com/c-warren/cdnc-release-please-test/commit/ce2069174dcfd7e62c3fff8234a8bd49f686ab90))
+
 ## [0.0.2-rc.1](https://github.com/c-warren/cdnc-release-please-test/compare/cdnc-release-please-test-v0.0.2-rc...cdnc-release-please-test-v0.0.2-rc.1) (2025-09-30)
 
 
