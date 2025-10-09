@@ -13,6 +13,11 @@ func main() {
 		fmt.Fprintf(w, "<!DOCTYPE html><html><head><title>Sleepy Baby</title></head><body><h1>Hello World</h1><p>Slept for 1 second</p></body></html>")
 	})
 
+	http.HandleFunc("/ai", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprintf(w, "<!DOCTYPE html><html><head><title>I'm a bot, beep-boop</title></head><body><h1>Hello World</h1></body></html>")
+	})
+		
 	// Root handler with 404 for unmatched routes
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
